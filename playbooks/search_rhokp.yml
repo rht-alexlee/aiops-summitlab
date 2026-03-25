@@ -4,7 +4,7 @@
   gather_facts: false
   vars:
     # Adjust these to match your local RHOKP environment
-    rhokp_url: "http://localhost:8080"
+    rhokp_url: "http://aap26.hklab-redhat.com:9090"
     rhokp_token: "{{ lookup('env', 'RHOKP_TOKEN') }}"
     search_query: "kernel panic"
     target_article_id: "1234567"
