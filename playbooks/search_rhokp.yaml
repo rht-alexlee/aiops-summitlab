@@ -1,0 +1,62 @@
+---
+- name: Interact with Red Hat Offline Knowledge Portal (RHOKP)
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Adjust these to match your local RHOKP environment
+    rhokp_url: "http://localhost:8080"
+    rhokp_token: "{{ lookup('env', 'RHOKP_TOKEN') }}"
+    search_query: "kernel panic"
+    target_article_id: "1234567"
+    target_cve_id: "CVE-2023-44487"
+
+  tasks:
+    # 1. Similar to search_portal(query)
+    - name: Search Portal for documentation and solutions
+      ansible.builtin.uri:
+        url: "{{ rhokp_url }}/api/search"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ rhokp_token }}"
+          Accept: "application/json"
+        body_format: json
+        body:
+          q: "{{ search_query }}"
+          rows: 5
+      register: search_results
+
+    - name: Display search results
+      ansible.builtin.debug:
+        var: search_results.json.response.docs
+
+    # 2. Similar to get_article_details(article_id)
+    - name: Fetch specific article details
+      ansible.builtin.uri:
+        url: "{{ rhokp_url }}/api/articles/{{ target_article_id }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ rhokp_token }}"
+          Accept: "application/json"
+      register: article_details
+      when: target_article_id is defined
+
+    - name: Display article content
+      ansible.builtin.debug:
+        msg: "Title: {{ article_details.json.title }} - Body: {{ article_details.json.body | truncate(200) }}"
+
+    # 3. Similar to search_cves(cve_id)
+    - name: Search for specific CVE information
+      ansible.builtin.uri:
+        url: "{{ rhokp_url }}/api/cves"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ rhokp_token }}"
+          Accept: "application/json"
+        body_format: json
+        params:
+          q: "id:{{ target_cve_id }}"
+      register: cve_results
+
+    - name: Display CVE severity
+      ansible.builtin.debug:
+        msg: "CVE {{ target_cve_id }} Severity: {{ cve_results.json.response.docs[0].severity | default('Unknown') }}"
